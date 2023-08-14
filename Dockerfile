@@ -1,6 +1,6 @@
 FROM fedora:latest
 
-RUN dnf update -y && dnf install -y bash arch-install-scripts bubblewrap systemd-container zip python3-pip dosfstools e2fsprogs
+RUN dnf update -y && dnf install -y bash arch-install-scripts bubblewrap systemd-container zip python3-pip dosfstools e2fsprogs rsync
 
 # TODO: remove this when mkosi-15 will be in the repos
 RUN dnf install -y git

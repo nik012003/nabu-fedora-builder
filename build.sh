@@ -77,7 +77,7 @@ make_image() {
     echo "### Boot Image size: $size MiB"
     size=$(($size + ($size / 8) + 64))
     echo "### Boot Padded size: $size MiB"
-    truncate -s ${size}M $image_dir/"$image_name"/efi.img
+    truncate -s ${size}M "$image_dir/$image_name/efi.img"
 
     ############# create root.img #############
     echo '### Calculating root image size'
@@ -85,22 +85,22 @@ make_image() {
     echo "### Root Image size: $size MiB"
     size=$(($size + ($size / 8) + 64))
     echo "### Root Padded size: $size MiB"
-    truncate -s ${size}M $image_dir/"$image_name"/root.img
+    truncate -s ${size}M "$image_dir/$image_name/root.img"
 
     ###### create vfat filesystem on efi.img ######
     echo '### Creating vfat filesystem on efi.img '
-    mkfs.vfat -n "fedoraefi" $image_dir/"$image_name"/efi.img
+    mkfs.vfat -n "fedoraefi" "$image_dir/$image_name/efi.img"
 
     ###### create rootfs filesystem on root.img ######
     echo '### Creating rootfs ext4 filesystem on root.img '
-    mkfs.ext4 -U "$ROOTFS_UUID" -L 'fedora_nabu' $image_dir/"$image_name"/root.img
+    mkfs.ext4 -U "$ROOTFS_UUID" -L 'fedora_nabu' "$image_dir/$image_name/root.img"
 
     echo '### Loop mounting root.img'
-    mount -o loop $image_dir/"$image_name"/root.img $image_mnt
+    mount -o loop "$image_dir/$image_name/root.img" "$image_mnt"
     
     echo '### Loop mounting efi.img'
-    mkdir -p $image_mnt/boot/efi
-    mount -o loop $image_dir/"$image_name"/efi.img $image_mnt/boot/efi
+    mkdir -p "$image_mnt/boot/efi"
+    mount -o loop "$image_dir/$image_name/efi.img" "$image_mnt/boot/efi"
     
     echo '### Copying files'
     rsync -aHAX --exclude '/tmp/*' --exclude '/boot/efi/' --exclude '/home/*' $mkosi_rootfs/ $image_mnt
@@ -115,7 +115,7 @@ make_image() {
     mount -o loop "$image_dir/$image_name/efi.img" "$image_mnt/boot/efi"
 
     echo '### Setting uuid for rootfs partition in /etc/fstab'
-    sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" $image_mnt/etc/fstab
+    sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" "$image_mnt/etc/fstab"
 
     # remove resolv.conf symlink -- this causes issues with arch-chroot
     rm -f $image_mnt/etc/resolv.conf
