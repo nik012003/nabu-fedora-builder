@@ -14,6 +14,13 @@ Builds a minimal Fedora image to run on Xiaomi Mi Pad 5
 - Until version 15.x is released for Fedora, install mksoi from git:  
   `python3 -m pip install --user git+https://github.com/systemd/mkosi.git@v15.1`
 
+## Run inside a Docker Container
+
+```
+docker build -t 'nabu-fedora-builder' . 
+docker run --privileged -v "$(pwd)"/images:/builder/images 'nabu-fedora-builder' 
+```
+
 ### User Notes
 
 1. The root password is **fedora**
