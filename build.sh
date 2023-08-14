@@ -9,9 +9,7 @@ date=$(date +%Y%m%d)
 image_name=nabu-fedora-${date}-1
 
 # this has to match the volume_id in installer_data.json
-# "volume_id": "0x2abf9f91"
-EFI_UUID=2ABF-9F91
-BOOT_UUID=$(uuidgen)
+EFI_UUID=$(uuidgen)
 ROOTFS_UUID=$(uuidgen)
 
 if [ "$(whoami)" != 'root' ]; then
@@ -36,12 +34,11 @@ mount_image() {
 
     [[ -z $image_path ]] && echo -n "image not found in $image_dir\nexiting..." && exit
 
-    for img in root.img boot.img esp; do
+    for img in root.img efi.img esp; do
         [[ ! -e $image_path/$img ]] && echo -e "$image_path/$img not found\nexiting..." && exit
     done
 
     [[ -z "$(findmnt -n $image_mnt)" ]] && mount -o loop,subvol=root "$image_path"/root.img $image_mnt
-    [[ -z "$(findmnt -n $image_mnt/boot)" ]] && mount -o loop "$image_path"/boot.img $image_mnt/boot
     [[ -z "$(findmnt -n $image_mnt/boot/efi)" ]] && mount --bind  "$image_path"/esp/ $image_mnt/boot/efi/
 }
 
@@ -51,7 +48,6 @@ umount_image() {
     fi
 
     [[ -n "$(findmnt -n $image_mnt/boot/efi)" ]] && umount $image_mnt/boot/efi
-    [[ -n "$(findmnt -n $image_mnt/boot)" ]] && umount $image_mnt/boot
     [[ -n "$(findmnt -n $image_mnt)" ]] && umount $image_mnt
 }
 
@@ -75,13 +71,13 @@ make_image() {
     rm -f $mkosi_rootfs/var/cache/dnf/*
     rm -rf "$image_dir/$image_name/*"
 
-    ############# create boot.img #############
+    ############# create efi.img #############
     echo '### Calculating boot image size'
     size=$(du -B M -s $mkosi_rootfs/boot | cut -dM -f1)
     echo "### Boot Image size: $size MiB"
     size=$(($size + ($size / 8) + 64))
     echo "### Boot Padded size: $size MiB"
-    truncate -s ${size}M $image_dir/"$image_name"/boot.img
+    truncate -s ${size}M $image_dir/"$image_name"/efi.img
 
     ############# create root.img #############
     echo '### Calculating root image size'
@@ -91,9 +87,9 @@ make_image() {
     echo "### Root Padded size: $size MiB"
     truncate -s ${size}M $image_dir/"$image_name"/root.img
 
-    ###### create ext4 filesystem on boot.img ######
-    echo '### Creating ext4 filesystem on boot.img '
-    mkfs.ext4 -U "$BOOT_UUID" -L fedora_boot -b 4096 $image_dir/"$image_name"/boot.img
+    ###### create vfat filesystem on efi.img ######
+    echo '### Creating vfat filesystem on efi.img '
+    mkfs.vfat -n "fedoraefi" $image_dir/"$image_name"/efi.img
 
     ###### create rootfs filesystem on root.img ######
     echo '### Creating rootfs ext4 filesystem on root.img '
@@ -102,25 +98,22 @@ make_image() {
     echo '### Loop mounting root.img'
     mount -o loop $image_dir/"$image_name"/root.img $image_mnt
     
-    echo '### Loop mounting boot.img'
-    mkdir -p $image_mnt/boot
-    mount -o loop $image_dir/"$image_name"/boot.img $image_mnt/boot
+    echo '### Loop mounting efi.img'
+    mkdir -p $image_mnt/boot/efi
+    mount -o loop $image_dir/"$image_name"/efi.img $image_mnt/boot/efi
     
     echo '### Copying files'
-    rsync -aHAX --exclude '/tmp/*' --exclude '/boot/*' --exclude '/home/*' $mkosi_rootfs/ $image_mnt/root
-    rsync -aHAX $mkosi_rootfs/boot/ $image_mnt/boot
+    rsync -aHAX --exclude '/tmp/*' --exclude '/boot/efi/' --exclude '/home/*' $mkosi_rootfs/ $image_mnt
+    rsync -aHA $mkosi_rootfs/boot/efi/ $image_mnt/boot/efi
     # this should be empty, but just in case
     rsync -aHAX $mkosi_rootfs/home/ $image_mnt/home
-    umount $image_mnt/boot
+    umount $image_mnt/boot/efi
     umount $image_mnt
     echo '### Loop mounting rootfs root subvolume'
     mount -o loop $image_dir/"$image_name"/root.img $image_mnt
-    echo '### Loop mounting ext4 boot volume'
-    mount -o loop $image_dir/"$image_name"/boot.img $image_mnt/boot
-    echo '### Setting pre-defined uuid for efi vfat partition in /etc/fstab'
-    sed -i "s/EFI_UUID_PLACEHOLDER/$EFI_UUID/" $image_mnt/etc/fstab
-    echo '### Setting uuid for boot partition in /etc/fstab'
-    sed -i "s/BOOT_UUID_PLACEHOLDER/$BOOT_UUID/" $image_mnt/etc/fstab
+    echo '### Loop mounting vfat efi volume'
+    mount -o loop $image_dir/"$image_name"/efi.img $image_mnt/boot/efi
+
     echo '### Setting uuid for rootfs partition in /etc/fstab'
     sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" $image_mnt/etc/fstab
 
@@ -132,13 +125,10 @@ make_image() {
     chroot $image_mnt systemd-machine-id-setup
     chroot $image_mnt echo "KERNEL_INSTALL_MACHINE_ID=$(cat /etc/machine-id)" > /etc/machine-info
 
-    echo -e '\n### Generating EFI bootloader'
-    arch-chroot $image_mnt create-efi-bootloader
-
     echo -e '\n### Generating GRUB config'
     arch-chroot $image_mnt grub2-editenv create
     rm -f $image_mnt/etc/kernel/cmdline
-    sed -i "s/BOOT_UUID_PLACEHOLDER/$BOOT_UUID/" $image_mnt/boot/efi/EFI/fedora/grub.cfg
+    sed -i "s/EFI_UUID_PLACEHOLDER/$EFI_UUID/" $image_mnt/boot/efi/EFI/fedora/grub.cfg
     arch-chroot $image_mnt grub2-mkconfig -o /boot/grub2/grub.cfg
 
 
@@ -169,7 +159,7 @@ make_image() {
     chroot $image_mnt ln -s ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
     echo -e '\n### Unmounting rootfs subvolumes'
-    umount $image_mnt/boot
+    umount $image_mnt/boot/efi
     umount $image_mnt
 
     echo -e '\n### Compressing'

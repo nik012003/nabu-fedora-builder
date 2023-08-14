@@ -1,3 +1,2 @@
-UUID=EFI_UUID_PLACEHOLDER                             /boot/efi  vfat   umask=0077,shortname=winnt   0 2
-UUID=BOOT_UUID_PLACEHOLDER  /boot       ext4   defaults                     0 2
-UUID=ROOTFS_UUID_PLACEHOLDER  /         ext4  subvol=root,compress=zstd:1  0 0
+LABEL=fedoraefi                     /boot/efi     vfat   umask=0077,shortname=winnt   0 2
+UUID=ROOTFS_UUID_PLACEHOLDER  /             ext4  subvol=root,compress=zstd:1   0 0
