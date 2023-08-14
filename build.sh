@@ -9,7 +9,6 @@ date=$(date +%Y%m%d)
 image_name=nabu-fedora-${date}-1
 
 # this has to match the volume_id in installer_data.json
-EFI_UUID=$(uuidgen)
 ROOTFS_UUID=$(uuidgen)
 
 if [ "$(whoami)" != 'root' ]; then
@@ -128,7 +127,7 @@ make_image() {
     echo -e '\n### Generating GRUB config'
     arch-chroot $image_mnt grub2-editenv create
     rm -f $image_mnt/etc/kernel/cmdline
-    sed -i "s/EFI_UUID_PLACEHOLDER/$EFI_UUID/" $image_mnt/boot/efi/EFI/fedora/grub.cfg
+    sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" $image_mnt/boot/efi/EFI/fedora/grub.cfg
     arch-chroot $image_mnt grub2-mkconfig -o /boot/grub2/grub.cfg
 
 
@@ -141,13 +140,9 @@ make_image() {
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /boot
 
-    echo -e '\n### Creating EFI system partition tree'
-    mkdir -p $image_dir/"$image_name"/esp/
-    rsync -aHAX $image_mnt/boot/efi/ $image_dir/"$image_name"/esp/
 
     ###### post-install cleanup ######
     echo -e '\n### Cleanup'
-    rm -rf $image_mnt/boot/efi/*
     rm -rf $image_mnt/boot/lost+found/
     rm -f  $image_mnt/etc/machine-id
     rm -f  $image_mnt/etc/kernel/{entry-token,install.conf}
