@@ -110,9 +110,9 @@ make_image() {
     umount $image_mnt/boot/efi
     umount $image_mnt
     echo '### Loop mounting rootfs root subvolume'
-    mount -o loop $image_dir/"$image_name"/root.img $image_mnt
+    mount -o loop "$image_dir/$image_name/root.img" "$image_mnt"
     echo '### Loop mounting vfat efi volume'
-    mount -o loop $image_dir/"$image_name"/efi.img $image_mnt/boot/efi
+    mount -o loop "$image_dir/$image_name/efi.img" "$image_mnt/boot/efi"
 
     echo '### Setting uuid for rootfs partition in /etc/fstab'
     sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" $image_mnt/etc/fstab
