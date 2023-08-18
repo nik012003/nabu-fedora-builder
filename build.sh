@@ -158,9 +158,9 @@ make_image() {
     umount $image_mnt
 
     echo -e '\n### Compressing'
-    rm -f $image_dir/latest.zip
+    rm -f $image_dir/"$image_name".zip
     pushd $image_dir/"$image_name" > /dev/null
-    zip -r ../latest.zip .
+    zip -r ../"$image_name".zip .
     popd > /dev/null
 
     echo '### Done'
