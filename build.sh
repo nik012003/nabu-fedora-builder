@@ -102,8 +102,8 @@ make_image() {
     mount -o loop "$image_dir/$image_name/efi.img" "$image_mnt/boot/efi"
     
     echo '### Copying files'
-    rsync -aHAX --exclude '/tmp/*' --exclude '/boot/efi/' --exclude '/home/*' $mkosi_rootfs/ $image_mnt
-    rsync -aHA $mkosi_rootfs/boot/efi/ $image_mnt/boot/efi
+    rsync -aHAX --exclude '/tmp/*' --exclude '/boot/efi' --exclude '/efi' --exclude '/home/*' $mkosi_rootfs/ $image_mnt
+    rsync -aHA $mkosi_rootfs/efi/ $image_mnt/boot/efi
     # this should be empty, but just in case
     rsync -aHAX $mkosi_rootfs/home/ $image_mnt/home
     umount $image_mnt/boot/efi
