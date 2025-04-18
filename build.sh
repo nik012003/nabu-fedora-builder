@@ -33,12 +33,12 @@ mount_image() {
 
     [[ -z $image_path ]] && echo -n "image not found in $image_dir\nexiting..." && exit
 
-    for img in root.img efi.img esp; do
+    for img in root.img efi.img; do
         [[ ! -e $image_path/$img ]] && echo -e "$image_path/$img not found\nexiting..." && exit
     done
 
-    [[ -z "$(findmnt -n $image_mnt)" ]] && mount -o loop,subvol=root "$image_path"/root.img $image_mnt
-    [[ -z "$(findmnt -n $image_mnt/boot/efi)" ]] && mount --bind  "$image_path"/esp/ $image_mnt/boot/efi/
+    [[ -z "$(findmnt -n $image_mnt)" ]] && mount -o loop "$image_path"/root.img $image_mnt
+    [[ -z "$(findmnt -n $image_mnt/boot/efi)" ]] && mount -o loop  "$image_path"/efi.img $image_mnt/boot/efi/
 }
 
 umount_image() {
@@ -67,7 +67,7 @@ make_image() {
     umount_image
     echo "## Making image $image_name"
     echo '### Cleaning up'
-    rm -f $mkosi_rootfs/var/cache/dnf/*
+    rm -rf $mkosi_rootfs/var/cache/dnf/*
     rm -rf "$image_dir/$image_name/*"
 
     ############# create efi.img #############
@@ -82,17 +82,17 @@ make_image() {
     echo '### Calculating root image size'
     size=$(du -B M -s --exclude=$mkosi_rootfs/boot $mkosi_rootfs | cut -dM -f1)
     echo "### Root Image size: $size MiB"
-    size=$(($size + ($size / 8) + 64))
+    size=$(($size + ($size / 8) + 512))
     echo "### Root Padded size: $size MiB"
     truncate -s ${size}M "$image_dir/$image_name/root.img"
 
     ###### create vfat filesystem on efi.img ######
     echo '### Creating vfat filesystem on efi.img '
-    mkfs.vfat -n "fedoraefi" "$image_dir/$image_name/efi.img"
+    mkfs.vfat -S 4096 -n "fedoraefi" "$image_dir/$image_name/efi.img"
 
     ###### create rootfs filesystem on root.img ######
     echo '### Creating rootfs ext4 filesystem on root.img '
-    mkfs.ext4 -U "$ROOTFS_UUID" -L 'fedora_nabu' "$image_dir/$image_name/root.img"
+    MKE2FS_DEVICE_PHYS_SECTSIZE=4096 MKE2FS_DEVICE_SECTSIZE=4096 mkfs.ext4 -U "$ROOTFS_UUID" -L 'fedora_nabu' "$image_dir/$image_name/root.img"
 
     echo '### Loop mounting root.img'
     mount -o loop "$image_dir/$image_name/root.img" "$image_mnt"
@@ -123,9 +123,17 @@ make_image() {
     echo -e '\n### Running systemd-machine-id-setup'
     chroot $image_mnt systemd-machine-id-setup
     chroot $image_mnt echo "KERNEL_INSTALL_MACHINE_ID=$(cat /etc/machine-id)" > /etc/machine-info
+    
+    # Dirty patch: reinstalling grub
+    echo  "### Reinstalling grub"
+    echo "nameserver 1.1.1.1" > $image_mnt/etc/resolv.conf 
+    arch-chroot $image_mnt dnf reinstall -y grub2-efi grub2-efi-modules shim-\*
+    rm -f $image_mnt/etc/resolv.conf
+
+    echo -e '\n### Generating Initramfs'
+    arch-chroot $image_mnt dracut --force --regenerate-all
 
     echo -e '\n### Generating GRUB config'
-    arch-chroot $image_mnt grub2-editenv create
     rm -f $image_mnt/etc/kernel/cmdline
     sed -i "s/ROOTFS_UUID_PLACEHOLDER/$ROOTFS_UUID/" $image_mnt/boot/efi/EFI/fedora/grub.cfg
     arch-chroot $image_mnt grub2-mkconfig -o /boot/grub2/grub.cfg
@@ -133,6 +141,7 @@ make_image() {
 
     echo "### Enabling system services"
     arch-chroot $image_mnt systemctl enable NetworkManager sshd systemd-resolved
+    arch-chroot $image_mnt systemctl enable rmtfs tqftpserv 
     echo "### Disabling systemd-firstboot"
     chroot $image_mnt rm -f /usr/lib/systemd/system/sysinit.target.wants/systemd-firstboot.service
 
@@ -146,11 +155,9 @@ make_image() {
     rm -rf $image_mnt/boot/lost+found/
     rm -f  $image_mnt/etc/machine-id
     rm -f  $image_mnt/etc/kernel/{entry-token,install.conf}
-    rm -rf $image_mnt/image.creation
     rm -f  $image_mnt/etc/dracut.conf.d/initial-boot.conf
     rm -f  $image_mnt/etc/yum.repos.d/mkosi*.repo
     rm -f  $image_mnt/var/lib/systemd/random-seed
-    sed -i '/GRUB_DISABLE_OS_PROBER=true/d' $image_mnt/etc/default/grub
     chroot $image_mnt ln -s ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
     echo -e '\n### Unmounting rootfs subvolumes'

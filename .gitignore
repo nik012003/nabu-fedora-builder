@@ -4,3 +4,6 @@ mkosi.rootfs.manifest
 .mkosi*
 mnt_image
 mkosi.rootfs.vmlinuz
+mkosi.skeleton/usr/lib/modules/
+mkosi.skeleton/boot/dtb-*
+mkosi.skeleton/boot/vmlinu*
