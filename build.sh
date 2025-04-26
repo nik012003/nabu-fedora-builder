@@ -141,7 +141,7 @@ make_image() {
 
     echo "### Enabling system services"
     arch-chroot $image_mnt systemctl enable NetworkManager sshd systemd-resolved
-    arch-chroot $image_mnt systemctl enable rmtfs tqftpserv 
+    arch-chroot $image_mnt systemctl enable rmtfs tqftpserv qbootctl-mark-bootable
     echo "### Disabling systemd-firstboot"
     chroot $image_mnt rm -f /usr/lib/systemd/system/sysinit.target.wants/systemd-firstboot.service
 
