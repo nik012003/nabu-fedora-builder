@@ -119,10 +119,6 @@ make_image() {
     # remove resolv.conf symlink -- this causes issues with arch-chroot
     rm -f $image_mnt/etc/resolv.conf
 
-    # need to generate a machine-id so that dbus doesn't complain
-    echo -e '\n### Running systemd-machine-id-setup'
-    chroot $image_mnt systemd-machine-id-setup
-    
     # Dirty patch: reinstalling grub
     echo  "### Reinstalling grub"
     echo "nameserver 1.1.1.1" > $image_mnt/etc/resolv.conf 
@@ -152,7 +148,6 @@ make_image() {
     ###### post-install cleanup ######
     echo -e '\n### Cleanup'
     rm -rf $image_mnt/boot/lost+found/
-    rm -f  $image_mnt/etc/machine-id
     rm -f  $image_mnt/etc/kernel/{entry-token,install.conf}
     rm -f  $image_mnt/etc/dracut.conf.d/initial-boot.conf
     rm -f  $image_mnt/etc/yum.repos.d/mkosi*.repo
