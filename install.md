@@ -4,7 +4,7 @@
 
 **NOTE**: The commands below are for a 128GB nabu, please double check them before running them, and change the sizes of the partitions accordingly. To print the partitions inside `parted` use the `print` command.
 
-Download and boot a [custom recovery image](https://github.com/serdeliuk/xiaomi-nabu-orangefox/releases/download) to partition the disk.
+Download and boot a [custom recovery image](https://github.com/serdeliuk/xiaomi-nabu-orangefox/releases) to partition the disk.
 
 ```sh
 fastboot boot xiaomi-nabu-orangefox.img 
@@ -40,6 +40,10 @@ reboot
 ```
 
 ## Step 2 : Flashing
+
+Download and extract the most recent release [here](https://github.com/nik012003/nabu-fedora-builder/releases).
+
+Download [u-boot for nabu](https://gitlab.com/sm8150-mainline/u-boot/-/jobs).
 
 Enter fastboot and then run the following
 

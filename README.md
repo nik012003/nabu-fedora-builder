@@ -4,6 +4,8 @@ Huge thanks to: [fedora-asahi-builder](https://github.com/leifliddy/asahi-fedora
 
 Builds a minimal Fedora image to run on Xiaomi Mi Pad 5
 
+Read the [Install instructions](install.md)
+
 ## Fedora Package Install
 
 ```dnf install arch-install-scripts bubblewrap systemd-container zip```
