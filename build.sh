@@ -119,10 +119,9 @@ make_image() {
     # remove resolv.conf symlink -- this causes issues with arch-chroot
     rm -f $image_mnt/etc/resolv.conf
 
-    # need to generate a machine-id so that a BLS entry can be created below
+    # need to generate a machine-id so that dbus doesn't complain
     echo -e '\n### Running systemd-machine-id-setup'
     chroot $image_mnt systemd-machine-id-setup
-    chroot $image_mnt echo "KERNEL_INSTALL_MACHINE_ID=$(cat /etc/machine-id)" > /etc/machine-info
     
     # Dirty patch: reinstalling grub
     echo  "### Reinstalling grub"
