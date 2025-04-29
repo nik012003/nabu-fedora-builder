@@ -64,6 +64,15 @@ Note that commands after the flash root.img might stall for some time, since eve
 You should now see u-boot, then grub, and finally a booting linux kernel. 
 The fedora image is __minimal__ , so plug in a keyboard via usb (or use the xiaomi keyboard with pogo pins) and have fun. (username: `root`, password: `fedora`). 
 
+### HACKS: 
+
+As of Fedora 42, patches to rmtfs haven't been updated yet. In oreder to make 
+rmtfs run, please patch the service file removing the qrtr.service requirements.
+The next update *should* contain the correct service, for now just edit `/usr/lib/systemd/system/rmtfs.service` 
+and remove the lines starting with `Requires` and `After`.
+
+The current image, doesn't automatically resize the disk, do it with `resize2fs /dev/sdX` (where X is the fedora rootfs partition).
+
 ### Create a new user 
 
 ```sh
