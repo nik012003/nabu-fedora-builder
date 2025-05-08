@@ -45,6 +45,8 @@ Download and extract the most recent release [here](https://github.com/nik012003
 
 Download [u-boot for nabu](https://gitlab.com/sm8150-mainline/u-boot/-/jobs).
 
+Download and extract [vbmeta_disabled.img](https://github.com/user-attachments/files/20102572/vbmeta_disabled.zip).
+
 Enter fastboot and then run the following
 
 ```

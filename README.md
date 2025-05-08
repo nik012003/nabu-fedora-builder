@@ -13,8 +13,6 @@ Read the [Install instructions](install.md)
 ### Building Notes
 
 - ```qemu-user-static``` is also needed if building the image on a ```non-aarch64``` system  
-- Until version 15.x is released for Fedora, install mksoi from git:  
-  `python3 -m pip install --user git+https://github.com/systemd/mkosi.git@v15.1`
 
 ## Run inside a Docker Container
 
